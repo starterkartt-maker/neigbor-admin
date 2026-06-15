@@ -1,0 +1,6 @@
+{
+  "name": "NeighborCart Admin Panel",
+  "description": "Modern Web Admin Panel for a hyperlocal grocery delivery app to manage orders, stores, products, and users.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
