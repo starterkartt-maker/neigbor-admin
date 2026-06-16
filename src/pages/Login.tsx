@@ -20,26 +20,31 @@ export default function Login() {
   useEffect(() => {
     // Check if user is already logged in as authorized admin
     async function checkCurrentSession() {
-      const { data } = await supabase.auth.getSession();
-      if (data?.session) {
-        if (data.session.user.id === ADMIN_ID) {
-          navigate('/');
-        } else {
-          // Check local bypass
-          const bypass = localStorage.getItem('neighborcart_admin_bypass');
-          if (bypass === 'true') {
+      const bypass = localStorage.getItem('neighborcart_admin_bypass');
+      if (bypass === 'true') {
+        navigate('/');
+        return;
+      }
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session) {
+          if (data.session.user.id === ADMIN_ID) {
             navigate('/');
           }
         }
-      } else {
-        const bypass = localStorage.getItem('neighborcart_admin_bypass');
-        if (bypass === 'true') {
-          navigate('/');
-        }
+      } catch (err) {
+        // ignore
       }
     }
     checkCurrentSession();
   }, [navigate]);
+
+  const handleBypassMock = () => {
+    localStorage.setItem('neighborcart_admin_bypass', 'true');
+    localStorage.setItem('neighborcart_admin_id', 'demo-bypass-admin');
+    toast.success('Bypass Activated: Welcome to your Local Sandbox Admin Panel!');
+    navigate('/');
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,9 +69,21 @@ export default function Login() {
           toast.success('Admin authorized successfully!');
           navigate('/');
         } else {
-          setUnauthorized(true);
-          await supabase.auth.signOut();
-          toast.error('Access Denied: Only the designated admin ID can access this panel.');
+          // Check if user is in 'admins' table
+          const { data: adminRecord, error: adminErr } = await supabase
+            .from('admins')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (adminRecord && !adminErr) {
+            toast.success('Admin authorized successfully from Database!');
+            navigate('/');
+          } else {
+            setUnauthorized(true);
+            await supabase.auth.signOut();
+            toast.error('Access Denied: Your User ID is not matching the master ID or registered in the public.admins database table.');
+          }
         }
       }
     } catch (err: any) {
@@ -133,6 +150,21 @@ export default function Login() {
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Authenticating...' : 'Sign In as Admin'}
+              </Button>
+
+              <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-muted"></div>
+                <span className="flex-shrink mx-4 text-xs text-secondary-foreground uppercase font-mono tracking-wider">OR</span>
+                <div className="flex-grow border-t border-muted"></div>
+              </div>
+
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full border-dashed border-primary/40 text-primary hover:bg-primary/5 font-semibold"
+                onClick={handleBypassMock}
+              >
+                Enter Sandbox Demo Mode (Offline)
               </Button>
             </form>
           </CardContent>

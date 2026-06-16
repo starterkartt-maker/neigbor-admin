@@ -20,8 +20,19 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       // 2. Evaluate real Supabase session
       try {
         const { data } = await supabase.auth.getSession();
-        if (data?.session?.user?.id === ADMIN_ID) {
-          setIsAuthenticated(true);
+        const userId = data?.session?.user?.id;
+        if (userId) {
+          if (userId === ADMIN_ID) {
+            setIsAuthenticated(true);
+          } else {
+            const { data: adminRecord } = await supabase
+              .from('admins')
+              .select('*')
+              .eq('user_id', userId)
+              .maybeSingle();
+            
+            setIsAuthenticated(!!adminRecord);
+          }
         } else {
           setIsAuthenticated(false);
         }
@@ -39,8 +50,21 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       const bypass = localStorage.getItem('neighborcart_admin_bypass');
       if (bypass === 'true') {
         setIsAuthenticated(true);
-      } else if (session?.user?.id === ADMIN_ID) {
-        setIsAuthenticated(true);
+      } else if (session?.user?.id) {
+        if (session.user.id === ADMIN_ID) {
+          setIsAuthenticated(true);
+        } else {
+          try {
+            const { data: adminRecord } = await supabase
+              .from('admins')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+            setIsAuthenticated(!!adminRecord);
+          } catch {
+            setIsAuthenticated(false);
+          }
+        }
       } else {
         setIsAuthenticated(false);
       }

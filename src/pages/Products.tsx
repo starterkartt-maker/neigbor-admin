@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import { Product, Category } from '@/src/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -34,6 +34,59 @@ const GALLERY_IMAGES = [
   { name: 'Yellow Lemons', url: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=400&auto=format&fit=crop&q=80', emoji: '🍋' }
 ];
 
+const compressImage = (file: File, callback: (base64: string) => void) => {
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 250;
+      const MAX_HEIGHT = 250;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+        // Compress to high-quality tiny JPG format (~10-15KB) to fit standard database limits
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+        callback(compressedBase64);
+      } else {
+        callback(event.target?.result as string);
+      }
+    };
+    img.onerror = () => {
+      // Direct fallback
+      callback(event.target?.result as string);
+    };
+    img.src = event.target?.result as string;
+  };
+  reader.readAsDataURL(file);
+};
+
+const DEFAULT_PRODUCTS: Product[] = [
+  { id: 'p1', name: 'Alphonso Mangoes', category: 'Fruits & Vegetables', price: 150, original_price: 180, stock: 45, emoji: '🥭', image_url: 'https://images.unsplash.com/photo-1553279768-865429fa0078?w=400&auto=format&fit=crop&q=80', unit: '1 kg', description: 'Sweet, juicy and hand-picked organic Alphonso mangoes.', barcode: '' },
+  { id: 'p2', name: 'Fresh Bananas', category: 'Fruits & Vegetables', price: 50, original_price: 60, stock: 120, emoji: '🍌', image_url: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&auto=format&fit=crop&q=80', unit: '1 dozen', description: 'Naturally ripened, premium local bananas.', barcode: '' },
+  { id: 'p3', name: 'Pure Cow Milk', category: 'Dairy, Bread & Eggs', price: 65, original_price: 70, stock: 30, emoji: '🥛', image_url: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&auto=format&fit=crop&q=80', unit: '1 L', description: 'Freshly sourced pasteurized whole milk.', barcode: '' },
+  { id: 'p4', name: 'Brown Sliced Bread', category: 'Dairy, Bread & Eggs', price: 40, original_price: 45, stock: 15, emoji: '🍞', image_url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop&q=80', unit: '400 g', description: 'Whole wheat freshly baked sandwich bread.', barcode: '' },
+  { id: 'p5', name: 'Chilli Potato Chips', category: 'Munchies & Chips', price: 20, original_price: 20, stock: 80, emoji: '🍟', image_url: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=400&auto=format&fit=crop&q=80', unit: '50 g', description: 'Spicy and crunchy kettle potato chips.', barcode: '' },
+  { id: 'p6', name: 'Instant Masala Ramen', category: 'Instant Food', price: 15, original_price: 18, stock: 150, emoji: '🍜', image_url: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&auto=format&fit=crop&q=80', unit: '70 g', description: 'Quick and tasty masala instant noodles.', barcode: '' }
+];
+
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -41,6 +94,8 @@ export default function Products() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [showGallery, setShowGallery] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   
   // Stock quick edit
   const [stockEdits, setStockEdits] = useState<{ [key: string]: number }>({});
@@ -52,29 +107,62 @@ export default function Products() {
         supabase.from('categories').select('*').order('name'),
       ]);
 
-      if (productsRes.data) {
+      if (productsRes.data && productsRes.data.length > 0) {
         setProducts(productsRes.data as Product[]);
+        localStorage.setItem('neighborcart_products', JSON.stringify(productsRes.data));
+      } else {
+        const localProds = localStorage.getItem('neighborcart_products');
+        if (localProds) {
+          setProducts(JSON.parse(localProds));
+        } else {
+          setProducts(DEFAULT_PRODUCTS);
+          localStorage.setItem('neighborcart_products', JSON.stringify(DEFAULT_PRODUCTS));
+        }
       }
 
       // Populate categories
       if (categoriesRes.data && categoriesRes.data.length > 0) {
         setCategories(categoriesRes.data as Category[]);
+        localStorage.setItem('neighborcart_categories', JSON.stringify(categoriesRes.data));
       } else {
         // Localstorage fallback check
         const local = localStorage.getItem('neighborcart_categories');
         if (local) {
           setCategories(JSON.parse(local));
         } else {
-          setCategories([
+          const defaultCats = [
             { id: '1', name: 'Fruits & Vegetables', slug: 'fruits-vegetables' },
             { id: '2', name: 'Dairy, Bread & Eggs', slug: 'dairy-bread-eggs' },
             { id: '3', name: 'Munchies & Chips', slug: 'snacks-munchies' },
             { id: '4', name: 'Instant Food', slug: 'instant-food' },
-          ]);
+          ];
+          setCategories(defaultCats);
+          localStorage.setItem('neighborcart_categories', JSON.stringify(defaultCats));
         }
       }
     } catch (e) {
-      console.error(e);
+      console.warn('Backend connection failed, falling back to LocalStorage:', e);
+      const localProds = localStorage.getItem('neighborcart_products');
+      if (localProds) {
+        setProducts(JSON.parse(localProds));
+      } else {
+        setProducts(DEFAULT_PRODUCTS);
+        localStorage.setItem('neighborcart_products', JSON.stringify(DEFAULT_PRODUCTS));
+      }
+
+      const localCats = localStorage.getItem('neighborcart_categories');
+      if (localCats) {
+        setCategories(JSON.parse(localCats));
+      } else {
+        const defaultCats = [
+          { id: '1', name: 'Fruits & Vegetables', slug: 'fruits-vegetables' },
+          { id: '2', name: 'Dairy, Bread & Eggs', slug: 'dairy-bread-eggs' },
+          { id: '3', name: 'Munchies & Chips', slug: 'snacks-munchies' },
+          { id: '4', name: 'Instant Food', slug: 'instant-food' },
+        ];
+        setCategories(defaultCats);
+        localStorage.setItem('neighborcart_categories', JSON.stringify(defaultCats));
+      }
     }
   };
 
@@ -90,25 +178,29 @@ export default function Products() {
     const newStock = stockEdits[id];
     if (newStock === undefined) return;
     
-    const { error } = await supabase.from('products').update({ stock: newStock }).eq('id', id);
-    if (error) {
-      toast.error('Failed to update stock in Supabase');
-      // Update locally as fallback
-      setProducts(products.map(p => p.id === id ? { ...p, stock: newStock } : p));
-      setStockEdits(prev => {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
-    } else {
-      toast.success('Stock updated');
-      setProducts(products.map(p => p.id === id ? { ...p, stock: newStock } : p));
-      setStockEdits(prev => {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
+    const updatedProducts = products.map(p => p.id === id ? { ...p, stock: newStock } : p);
+    try {
+      const { error } = await supabase.from('products').update({ stock: newStock }).eq('id', id);
+      if (error) {
+        setProducts(updatedProducts);
+        localStorage.setItem('neighborcart_products', JSON.stringify(updatedProducts));
+        toast.success('Stock updated (saved locally as backend fallback)');
+      } else {
+        toast.success('Stock updated in database successfully');
+        setProducts(updatedProducts);
+        localStorage.setItem('neighborcart_products', JSON.stringify(updatedProducts));
+      }
+    } catch {
+      setProducts(updatedProducts);
+      localStorage.setItem('neighborcart_products', JSON.stringify(updatedProducts));
+      toast.success('Stock updated (saved locally as offline fallback)');
     }
+
+    setStockEdits(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
@@ -117,26 +209,33 @@ export default function Products() {
 
     try {
       if (editingProduct.id) {
+        const updatedProducts = products.map(p => p.id === editingProduct.id ? { ...p, ...editingProduct } as Product : p);
         const { error } = await supabase.from('products').update(editingProduct).eq('id', editingProduct.id);
+        
+        setProducts(updatedProducts);
+        localStorage.setItem('neighborcart_products', JSON.stringify(updatedProducts));
+
         if (error) {
-          // Update local state fallback
-          setProducts(products.map(p => p.id === editingProduct.id ? { ...p, ...editingProduct } as Product : p));
-          toast.success('Product updated locally (Supabase write fallback)');
+          toast.success('Product updated locally (offline fallback mode)');
         } else {
-          toast.success('Product updated successfully');
+          toast.success('Product updated successfully in backend');
         }
       } else {
         const generatedId = Math.random().toString(36).substr(2, 9);
         const newProd = {
           ...editingProduct,
           id: generatedId,
-        };
+        } as Product;
+        const updatedProducts = [newProd, ...products];
         const { error } = await supabase.from('products').insert([newProd]);
+        
+        setProducts(updatedProducts);
+        localStorage.setItem('neighborcart_products', JSON.stringify(updatedProducts));
+
         if (error) {
-          setProducts([newProd as Product, ...products]);
-          toast.success('Product added locally (Supabase write fallback)');
+          toast.success('Product added locally (offline fallback mode)');
         } else {
-          toast.success('Product added successfully');
+          toast.success('Product added successfully to backend');
         }
       }
       setEditingProduct(null);
@@ -148,13 +247,21 @@ export default function Products() {
 
   const handleDeleteProduct = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
-    const { error } = await supabase.from('products').delete().eq('id', id);
-    if (error) {
-      setProducts(products.filter(p => p.id !== id));
-      toast.success('Product deleted locally (Supabase rollback fallback)');
-    } else {
-      toast.success('Product deleted successfully');
-      fetchData();
+    const updatedProducts = products.filter(p => p.id !== id);
+    try {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      setProducts(updatedProducts);
+      localStorage.setItem('neighborcart_products', JSON.stringify(updatedProducts));
+      if (error) {
+        toast.success('Product deleted locally (offline fallback mode)');
+      } else {
+        toast.success('Product deleted successfully');
+        fetchData();
+      }
+    } catch {
+      setProducts(updatedProducts);
+      localStorage.setItem('neighborcart_products', JSON.stringify(updatedProducts));
+      toast.success('Product deleted locally (offline fallback mode)');
     }
   };
 
@@ -325,27 +432,32 @@ export default function Products() {
                       placeholder="https://example.com/mango.jpg" 
                       className="flex-1"
                     />
-                    <div className="relative shrink-0">
+                    <div className="shrink-0">
                       <input
+                        ref={fileInputRef}
                         type="file"
                         accept="image/*"
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        className="hidden"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
+                            compressImage(file, (compressedBase64) => {
                               setEditingProduct({
                                 ...editingProduct,
-                                image_url: reader.result as string
+                                image_url: compressedBase64
                               });
-                              toast.success('Image loaded successfully from device');
-                            };
-                            reader.readAsDataURL(file);
+                              toast.success('Image uploaded & compressed successfully');
+                            });
                           }
                         }}
                       />
-                      <Button type="button" variant="outline" size="sm" className="h-10">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-10 text-xs font-semibold"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
                         Upload
                       </Button>
                     </div>

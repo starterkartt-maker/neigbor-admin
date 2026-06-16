@@ -103,7 +103,56 @@ export default function Dashboard() {
           ]);
         }
       } catch (err) {
-        console.error('Error fetching dashboard stats', err);
+        console.warn('Backend connection failed, calculating dashboard fallback statistics natively:', err);
+        setIsDemoData(true);
+
+        const localCats = localStorage.getItem('neighborcart_categories');
+        const countCats = localCats ? JSON.parse(localCats).length : 4;
+
+        const localProds = localStorage.getItem('neighborcart_products');
+        const countProds = localProds ? JSON.parse(localProds).length : 6;
+
+        const localOrdersStr = localStorage.getItem('neighborcart_orders');
+        const localOrdersList: Order[] = localOrdersStr ? JSON.parse(localOrdersStr) : [];
+        const countOrders = localOrdersList.length > 0 ? localOrdersList.length : 26;
+
+        setStats({
+          orders: countOrders,
+          categories: countCats,
+          products: countProds,
+        });
+
+        if (localOrdersList.length > 0) {
+          setRecentOrders(localOrdersList.slice(0, 10));
+          
+          const counts = { Pending: 0, Packing: 0, Shipped: 0, Delivered: 0 };
+          localOrdersList.forEach((o) => {
+            const statusStr = String(o.status || '').trim();
+            if (statusStr === 'Pending') {
+              counts.Pending++;
+            } else if (statusStr === 'Preparing' || statusStr === 'Packing') {
+              counts.Packing++;
+            } else if (statusStr === 'Out for Delivery' || statusStr === 'Shipped') {
+              counts.Shipped++;
+            } else if (statusStr === 'Delivered') {
+              counts.Delivered++;
+            }
+          });
+
+          setChartData([
+            { name: 'Pending', count: counts.Pending, color: '#f59e0b' },
+            { name: 'Packing', count: counts.Packing, color: '#3b82f6' },
+            { name: 'Shipped', count: counts.Shipped, color: '#8b5cf6' },
+            { name: 'Delivered', count: counts.Delivered, color: '#10b981' },
+          ]);
+        } else {
+          setChartData([
+            { name: 'Pending', count: 4, color: '#f59e0b' },
+            { name: 'Packing', count: 7, color: '#3b82f6' },
+            { name: 'Shipped', count: 3, color: '#8b5cf6' },
+            { name: 'Delivered', count: 12, color: '#10b981' },
+          ]);
+        }
       }
     }
     fetchDashboard();
