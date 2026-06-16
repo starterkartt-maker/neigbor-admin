@@ -76,14 +76,6 @@ export default function Login() {
     }
   };
 
-  const handleDemoBypass = () => {
-    localStorage.setItem('neighborcart_admin_bypass', 'true');
-    // Save fake admin profile
-    localStorage.setItem('neighborcart_admin_id', ADMIN_ID);
-    toast.success('Demo evaluation mode activated as Admin: ' + ADMIN_ID);
-    navigate('/');
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
       <div className="w-full max-w-md space-y-4">
@@ -143,24 +135,6 @@ export default function Login() {
                 {loading ? 'Authenticating...' : 'Sign In as Admin'}
               </Button>
             </form>
-
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Sandbox Evaluation</span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Button type="button" variant="outline" className="w-full flex items-center justify-center gap-2 border-dashed border-primary hover:bg-primary/5" onClick={handleDemoBypass}>
-                <LogIn className="h-4 w-4" /> Bypass with Admin ID: f8674836...
-              </Button>
-              <p className="text-[11px] text-muted-foreground text-center">
-                Quickly evaluate high-fidelity screens, categories, catalogs & live inputs.
-              </p>
-            </div>
           </CardContent>
         </Card>
       </div>

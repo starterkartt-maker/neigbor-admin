@@ -11,12 +11,36 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Search, Edit2, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
 
+const GALLERY_IMAGES = [
+  { name: 'Red Apples', url: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400&auto=format&fit=crop&q=80', emoji: '🍎' },
+  { name: 'Fresh Bananas', url: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&auto=format&fit=crop&q=80', emoji: '🍌' },
+  { name: 'Pure Milk', url: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&auto=format&fit=crop&q=80', emoji: '🥛' },
+  { name: 'Sliced Bread', url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop&q=80', emoji: '🍞' },
+  { name: 'Green Grapes', url: 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400&auto=format&fit=crop&q=80', emoji: '🍇' },
+  { name: 'Fresh Eggs', url: 'https://images.unsplash.com/photo-1506976785307-8732e854ad03?w=400&auto=format&fit=crop&q=80', emoji: '🥚' },
+  { name: 'Organic Potatoes', url: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&auto=format&fit=crop&q=80', emoji: '🥔' },
+  { name: 'Red Tomatoes', url: 'https://images.unsplash.com/photo-1595855759920-86582396756a?w=400&auto=format&fit=crop&q=80', emoji: '🍅' },
+  { name: 'Broccoli Heads', url: 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=400&auto=format&fit=crop&q=80', emoji: '🥦' },
+  { name: 'Crisp Potato Chips', url: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=400&auto=format&fit=crop&q=80', emoji: '🍟' },
+  { name: 'Soda Can', url: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400&auto=format&fit=crop&q=80', emoji: '🥤' },
+  { name: 'Orange Juice', url: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=400&auto=format&fit=crop&q=80', emoji: '🧃' },
+  { name: 'Chocolate Bar', url: 'https://images.unsplash.com/photo-1511381939415-e44ab21d5e43?w=400&auto=format&fit=crop&q=80', emoji: '🍫' },
+  { name: 'Instant Ramen Noodles', url: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&auto=format&fit=crop&q=80', emoji: '🍜' },
+  { name: 'Butter Block', url: 'https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=400&auto=format&fit=crop&q=80', emoji: '🧈' },
+  { name: 'Basmati Rice Bag', url: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&auto=format&fit=crop&q=80', emoji: '🌾' },
+  { name: 'Strawberries', url: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400&auto=format&fit=crop&q=80', emoji: '🍓' },
+  { name: 'Water Bottle', url: 'https://images.unsplash.com/photo-1608889175123-8ec330b86f84?w=400&auto=format&fit=crop&q=80', emoji: '💧' },
+  { name: 'Fresh Cucumbers', url: 'https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=400&auto=format&fit=crop&q=80', emoji: '🥒' },
+  { name: 'Yellow Lemons', url: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=400&auto=format&fit=crop&q=80', emoji: '🍋' }
+];
+
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+  const [showGallery, setShowGallery] = useState(false);
   
   // Stock quick edit
   const [stockEdits, setStockEdits] = useState<{ [key: string]: number }>({});
@@ -281,15 +305,105 @@ export default function Products() {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Image URL / Media</Label>
-                  <Input value={editingProduct.image_url || ''} onChange={e => setEditingProduct({...editingProduct, image_url: e.target.value})} placeholder="https://example.com/mango.jpg" />
+                <div className="space-y-2 col-span-2 sm:col-span-1">
+                  <div className="flex items-center justify-between">
+                    <Label>Image URL / Media</Label>
+                    <Button 
+                      type="button" 
+                      variant="link" 
+                      className="h-auto p-0 text-xs text-primary font-semibold flex items-center gap-1 hover:no-underline"
+                      onClick={() => setShowGallery(!showGallery)}
+                    >
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      {showGallery ? 'Hide Gallery' : 'Gallery Pics'}
+                    </Button>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <Input 
+                      value={editingProduct.image_url || ''} 
+                      onChange={e => setEditingProduct({...editingProduct, image_url: e.target.value})} 
+                      placeholder="https://example.com/mango.jpg" 
+                      className="flex-1"
+                    />
+                    <div className="relative shrink-0">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setEditingProduct({
+                                ...editingProduct,
+                                image_url: reader.result as string
+                              });
+                              toast.success('Image loaded successfully from device');
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      <Button type="button" variant="outline" size="sm" className="h-10">
+                        Upload
+                      </Button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Emoji Emblem (optional)</Label>
                   <Input value={editingProduct.emoji || ''} onChange={e => setEditingProduct({...editingProduct, emoji: e.target.value})} placeholder="🥭" />
                 </div>
+
+                {editingProduct.image_url && (
+                  <div className="col-span-2 flex items-center gap-3 p-2 border rounded-md bg-muted/30">
+                    <img 
+                      src={editingProduct.image_url} 
+                      alt="Product preview" 
+                      referrerPolicy="no-referrer"
+                      className="h-14 w-14 object-cover rounded border bg-white shadow-sm" 
+                    />
+                    <div className="space-y-0.5">
+                      <div className="text-xs font-semibold">Image Loaded Successfully</div>
+                      <button 
+                        type="button" 
+                        onClick={() => setEditingProduct({ ...editingProduct, image_url: '' })}
+                        className="text-[11px] text-destructive hover:underline font-medium"
+                      >
+                        Remove image
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {showGallery && (
+                  <div className="col-span-2 border border-dashed rounded-lg p-3 bg-muted/40 max-h-[220px] overflow-y-auto space-y-2">
+                    <div className="text-xs font-semibold text-muted-foreground">Select standard high-res image & emoji:</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {GALLERY_IMAGES.map((img, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setEditingProduct({
+                              ...editingProduct,
+                              image_url: img.url,
+                              emoji: img.emoji
+                            });
+                            setShowGallery(false);
+                            toast.success(`Selected high-resolution image for ${img.name}!`);
+                          }}
+                          className="group relative flex flex-col items-center justify-center p-2 border rounded-md bg-card hover:border-primary hover:ring-1 hover:ring-primary transition-all text-left"
+                        >
+                          <img src={img.url} alt={img.name} referrerPolicy="no-referrer" className="h-10 w-10 object-cover rounded" />
+                          <span className="text-[10px] text-muted-foreground truncate w-full text-center mt-1 font-medium">{img.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label>Unit (e.g. 1 kg, 500 g, pc)</Label>

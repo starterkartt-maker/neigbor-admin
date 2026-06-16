@@ -1,4 +1,4 @@
-import { ShoppingCart, Package, Users, LayoutDashboard, Menu, Layers, LogOut } from 'lucide-react';
+import { ShoppingCart, Package, LayoutDashboard, Menu, Layers, LogOut } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -12,20 +12,17 @@ const routes = [
   { path: '/orders', label: 'Orders', icon: ShoppingCart },
   { path: '/categories', label: 'Categories', icon: Layers },
   { path: '/products', label: 'Products', icon: Package },
-  { path: '/users', label: 'Users', icon: Users },
 ];
 
 export function Sidebar() {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
+    localStorage.removeItem('neighborcart_admin_bypass');
+    localStorage.removeItem('neighborcart_admin_id');
     const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success('Signed out successfully');
-      navigate('/login');
-    }
+    toast.success('Signed out successfully');
+    navigate('/login');
   };
 
   return (

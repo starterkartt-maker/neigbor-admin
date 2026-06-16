@@ -4,8 +4,17 @@ export interface Order {
   id: string;
   store_name: string;
   amount: number;
+  total_amount?: number;
   items: number;
+  items_details?: string;
+  product_name?: string;
+  product_names?: string;
+  order_name?: string;
+  item_names?: string;
+  products?: string | any;
+  products_summary?: string;
   user_phone: string;
+  user_name?: string;
   status: OrderStatus;
   driver_name?: string;
   driver_phone?: string;
