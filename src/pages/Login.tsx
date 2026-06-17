@@ -20,11 +20,6 @@ export default function Login() {
   useEffect(() => {
     // Check if user is already logged in as authorized admin
     async function checkCurrentSession() {
-      const bypass = localStorage.getItem('neighborcart_admin_bypass');
-      if (bypass === 'true') {
-        navigate('/');
-        return;
-      }
       try {
         const { data } = await supabase.auth.getSession();
         if (data?.session) {
@@ -38,13 +33,6 @@ export default function Login() {
     }
     checkCurrentSession();
   }, [navigate]);
-
-  const handleBypassMock = () => {
-    localStorage.setItem('neighborcart_admin_bypass', 'true');
-    localStorage.setItem('neighborcart_admin_id', 'demo-bypass-admin');
-    toast.success('Bypass Activated: Welcome to your Local Sandbox Admin Panel!');
-    navigate('/');
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,21 +138,6 @@ export default function Login() {
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Authenticating...' : 'Sign In as Admin'}
-              </Button>
-
-              <div className="relative flex py-2 items-center">
-                <div className="flex-grow border-t border-muted"></div>
-                <span className="flex-shrink mx-4 text-xs text-secondary-foreground uppercase font-mono tracking-wider">OR</span>
-                <div className="flex-grow border-t border-muted"></div>
-              </div>
-
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="w-full border-dashed border-primary/40 text-primary hover:bg-primary/5 font-semibold"
-                onClick={handleBypassMock}
-              >
-                Enter Sandbox Demo Mode (Offline)
               </Button>
             </form>
           </CardContent>

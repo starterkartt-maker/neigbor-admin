@@ -9,15 +9,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   useEffect(() => {
     async function evaluateAuth() {
-      // 1. Evaluate bypass/demo mode
-      const bypass = localStorage.getItem('neighborcart_admin_bypass');
-      if (bypass === 'true') {
-        setIsAuthenticated(true);
-        setLoading(false);
-        return;
-      }
-
-      // 2. Evaluate real Supabase session
+      // Evaluate real Supabase session
       try {
         const { data } = await supabase.auth.getSession();
         const userId = data?.session?.user?.id;
@@ -47,10 +39,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
     // Setup listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      const bypass = localStorage.getItem('neighborcart_admin_bypass');
-      if (bypass === 'true') {
-        setIsAuthenticated(true);
-      } else if (session?.user?.id) {
+      if (session?.user?.id) {
         if (session.user.id === ADMIN_ID) {
           setIsAuthenticated(true);
         } else {

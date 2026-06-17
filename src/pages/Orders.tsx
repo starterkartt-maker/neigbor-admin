@@ -319,18 +319,6 @@ export default function Orders() {
         </Button>
       </div>
 
-      {localStorage.getItem('neighborcart_admin_bypass') === 'true' && (
-        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-            <h4 className="font-bold text-sm tracking-tight uppercase font-mono">Sandbox Demo Mode Active</h4>
-          </div>
-          <p className="text-xs leading-relaxed max-w-2xl">
-            You are currently browsing the panel in **Offline Sandbox Demo Mode**. Real-time orders placed by customers in the customer app will **not** automatically sync here until you sign out and sign in with your actual database administrator credentials, or deploy the Supabase backend configuration.
-          </p>
-        </div>
-      )}
-
       {backendError && (
         <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-800 space-y-1">
           <div className="flex items-center gap-2">

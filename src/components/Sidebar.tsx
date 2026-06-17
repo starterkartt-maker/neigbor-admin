@@ -18,8 +18,6 @@ export function Sidebar() {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    localStorage.removeItem('neighborcart_admin_bypass');
-    localStorage.removeItem('neighborcart_admin_id');
     try {
       await supabase.auth.signOut();
     } catch (e) {
@@ -58,12 +56,6 @@ export function Sidebar() {
           );
         })}
       </nav>
-      {localStorage.getItem('neighborcart_admin_bypass') === 'true' && (
-        <div className="mx-4 my-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
-          <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest leading-none">Sandbox Active</p>
-          <span className="text-[10px] font-medium text-amber-500/90 block mt-1 leading-normal">Offline Backup Storage</span>
-        </div>
-      )}
       <div className="p-4 border-t">
         <Button
           variant="ghost"
