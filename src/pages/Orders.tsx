@@ -1195,55 +1195,81 @@ export default function Orders() {
               </div>
 
               {/* Section 4: Items Ordered List */}
-              <div className="bg-white rounded-2xl border border-slate-100 p-4 space-y-3 shadow-xs">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <div className="bg-white rounded-2xl border border-slate-150 p-5 space-y-4 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-150">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-rose-50 text-rose-600">
-                      <ShoppingCart className="h-4 w-4" />
+                    <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600">
+                      <ShoppingBag className="h-4 w-4" />
                     </div>
-                    <h4 className="text-xs font-black tracking-wide uppercase text-slate-800">Items Ordered</h4>
+                    <h4 className="text-sm font-bold tracking-tight text-slate-900 font-sans">Items Ordered</h4>
                   </div>
-                  <span className="text-xs font-bold text-slate-400 bg-slate-50 border px-2 py-0.5 rounded-lg">
+                  <span className="text-xs font-bold text-slate-500 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-lg font-mono">
                     {parseOrderItemsDetails(selectedOrder).length} Item(s)
                   </span>
                 </div>
 
-                <div className="space-y-3 divide-y divide-slate-50">
-                  {parseOrderItemsDetails(selectedOrder).map((item) => (
-                    <div key={item.id} className="flex gap-3 pt-3 first:pt-0">
-                      <div className="h-12 w-12 rounded-xl border border-slate-100 overflow-hidden bg-slate-50 shrink-0">
+                {/* Compact Table Headers */}
+                <div className="grid grid-cols-[30px_1fr_80px] text-[10px] font-bold text-slate-400 uppercase tracking-widest pb-1.5 border-b border-slate-100 font-sans">
+                  <span>#</span>
+                  <span>Item</span>
+                  <span className="text-right">Price</span>
+                </div>
+
+                <div className="divide-y divide-slate-100">
+                  {parseOrderItemsDetails(selectedOrder).map((item, index) => (
+                    <div key={item.id} className="grid grid-cols-[30px_1fr_80px] items-start py-3 first:pt-0 last:pb-0">
+                      {/* Serial Number */}
+                      <span className="text-xs font-bold text-slate-400 font-mono pt-1">
+                        {index + 1}.
+                      </span>
+
+                      {/* Thumbnail & Item name details */}
+                      <div className="flex items-center gap-3">
                         <img 
                           src={item.image} 
                           alt={item.name} 
-                          className="w-full h-full object-cover" 
+                          className="h-8 w-8 rounded-lg border border-slate-100 object-cover shrink-0 bg-slate-50" 
                           referrerPolicy="no-referrer"
                         />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-bold text-slate-800 truncate" title={item.name}>{item.name}</div>
-                        <div className="text-[10px] text-slate-400 mt-0.5 font-sans">{item.variant}</div>
-                        <div className="text-[10px] text-slate-400 mt-1 flex justify-between items-center font-mono">
-                          <span>₹{item.price.toFixed(2)} x {item.qty}</span>
-                          <span className="font-bold text-slate-700">₹{item.total.toFixed(2)}</span>
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-slate-800 leading-snug break-words" title={item.name}>
+                            {item.name}
+                          </div>
+                          <div className="text-[10px] text-slate-400 mt-0.5 font-medium">
+                            {item.variant} {item.qty > 1 ? `× ${item.qty}` : ''}
+                          </div>
                         </div>
                       </div>
+
+                      {/* Right-aligned Price */}
+                      <span className="text-xs font-bold text-slate-800 font-mono text-right pt-1">
+                        ₹{item.total.toFixed(2)}
+                      </span>
                     </div>
                   ))}
                 </div>
 
                 {/* Cost Calculations */}
-                <div className="border-t border-slate-100 pt-3.5 space-y-1.5 text-xs">
+                <div className="border-t border-slate-100 pt-3.5 space-y-2 text-xs">
                   <div className="flex justify-between text-slate-400 font-medium">
                     <span>Subtotal</span>
-                    <span className="text-slate-800 font-mono">₹{Math.max(0, (selectedOrder.total_amount ?? selectedOrder.amount ?? 0) - 2).toFixed(2)}</span>
+                    <span className="text-slate-700 font-mono">₹{Math.max(0, (selectedOrder.total_amount ?? selectedOrder.amount ?? 0) - 2).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-slate-400 font-medium">
                     <span>Delivery Fee</span>
                     <span className="text-emerald-600 font-bold font-mono">₹2.00</span>
                   </div>
-                  <div className="flex justify-between text-slate-800 font-black text-sm border-t border-slate-100 pt-2 font-sans">
-                    <span>Total Amount</span>
-                    <span className="text-indigo-600 font-mono">₹{(selectedOrder.total_amount ?? selectedOrder.amount ?? 0).toFixed(2)}</span>
+                  <div className="flex justify-between text-slate-400 font-medium">
+                    <span>Discount</span>
+                    <span className="text-slate-700 font-mono">₹0.00</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400 font-medium">
+                    <span>Tax</span>
+                    <span className="text-slate-700 font-mono">₹0.00</span>
+                  </div>
+                  <div className="flex justify-between text-slate-900 border-t border-slate-100 pt-2.5 items-center">
+                    <span className="text-xs font-bold text-slate-800">Total Amount</span>
+                    <span className="text-sm font-black text-indigo-600 font-mono">₹{(selectedOrder.total_amount ?? selectedOrder.amount ?? 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
